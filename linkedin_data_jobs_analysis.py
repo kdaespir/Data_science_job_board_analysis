@@ -34,21 +34,22 @@ def jobs_by_company(num_companies=4):
                   ''').df()
    return companies_w_most_jobs
                
-def categorize_jobs_by_title(df=data):
+def categorize_jobs_by_title(title):
    buckets = {
-      "Data Engineer":                 [r"\bdata engineer\b", r"\bengineer, data\b"],
+      "Data Engineer":                 [r"\bdata engineer\b", r"\bengineer, data\b", r"\analytics engineer\b"],
       "Data Scientist":                [r"\bdata scientist\b", r"\bscientist\b"],
-      "Data/Business Analyst":         [r"\bdata analyst\b", r"\banalyst\b"],
+      "Data/Business Analyst":         [r"\bdata analyst\b", r"\banalyst\b", r"\banalytics\b"],
       "ML/AI Engineer":                [r"machine learning", r"\bml\b", r"\bai\b"],
       "Software Engineer":             [r"\bsoftware engineer\b", r"\bengineer, software\b"]
    }
-   def generalize(title):
-      text = title.lower()
-      for bucket, patterns in buckets.items():
-         for pat in patterns:
-            if re.search(pat, text):
-               return bucket
-            
-      return 'Other'
+   text = title.lower()
+   for bucket, patterns in buckets.items():
+      for pat in patterns:
+         if re.search(pat, text):
+            return bucket
+         
+   return 'Other'
 
-data['general_title'] = data['title'].apply(ge)
+data['general_title'] = data['title'].apply(categorize_jobs_by_title)
+
+print(data[data['general_title'] == 'Other'])
