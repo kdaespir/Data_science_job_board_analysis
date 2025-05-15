@@ -1,5 +1,6 @@
 import pandas as pd
 import duckdb
+
 data = pd.read_csv('clean_jobs.csv')
 
 # Gives the number of null columns in each feature
@@ -12,7 +13,7 @@ companies_breakdown = duckdb.sql("""
             order by counts desc, company desc
                """)
 
-_ = duckdb.sql('''
+companies_w_most_jobs = duckdb.sql('''
                with cte as (
                select *, 
                from companies_breakdown
@@ -28,7 +29,7 @@ _ = duckdb.sql('''
                where company not in (select company from cte)
 
                order by company
-               ''')
+               ''').df()
                
 
 print(_)
