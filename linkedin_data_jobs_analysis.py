@@ -8,6 +8,13 @@ from geotext import GeoText
 import geonamescache
 import pycountry
 
+gc = geonamescache.GeonamesCache()
+cities_dict = gc.get_cities() 
+city_to_cc = {
+   info['name']: info['countrycode']
+   for info in cities_dict.values()
+}
+
 data = pd.read_csv('clean_jobs.csv')
 
 data['location'] = data['location'].str.replace(r'\b(?:area|greater|metropolitan)\b', '', regex=True, flags=re.IGNORECASE)
@@ -122,28 +129,24 @@ def get_cities_countries(text):
 data[['city', 'country']] = data['location'].apply(get_cities_countries)
 
 def catch_missing_city_country(location, city, country):
-   gc = geonamescache.GeonamesCache()
-   cities_dict = gc.get_cities() 
-   city_to_cc = {
-    info['name']: info['countrycode']
-    for info in cities_dict.values()
-   }
    if location.strip() in city_to_cc.keys():
       if country == '':
-         country_out = city_to_cc.get(location.strip())
+         country_out = pycountry.countries.get(alpha_2=city_to_cc.get(location.strip())).name
+      else:
+         country_out = country[:]
       if city == '':
          city_out = location
-      return pd.Series
+      else:
+         city_out = city[:]
+      return pd.Series({'city': city_out, 'country': country_out})
+   elif city.strip() in city_to_cc.keys():
+         city_out = city[:].strip()
+         country_out = pycountry.countries.get(alpha_2=city_to_cc.get(city.strip())).name
+         return pd.Series({'city': city_out, 'country': country_out})
+   else:
+      return pd.Series({'city': city, 'country': country})
 
+data[['city', 'country']] = data.apply(lambda row: catch_missing_city_country(row.location, row.city, row.country), axis=1)
 
-# print(data[data['country'] == ''][['location', 'city', 'country']])
-
-
-gc = geonamescache.GeonamesCache()
-cities_dict = gc.get_cities() 
-city_to_cc = {
-   info['name']: info['countrycode']
-   for info in cities_dict.values()
-}
-
-print(city_to_cc.get('ttes') == None)
+print(data[data['country'] == ''][['location', 'city', 'country']])
+print(city_to_cc.get('San Francisco'))
