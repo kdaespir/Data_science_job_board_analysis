@@ -17,8 +17,15 @@ city_to_cc = {
 
 data = pd.read_csv('clean_jobs.csv')
 
-data['location'] = data['location'].str.replace(r'\b(?:area|greater|metropolitan)\b', '', regex=True, flags=re.IGNORECASE)
+# print(data.isnull().sum(), len(data))
+
+#employment type and worktype was all NaN in this dataset and can be dropped
+data.drop(['employment_type', 'work_type'], inplace=True, axis=1 )
+
+data['location'] = data['location'].str.replace(r'\b(?:area|greater|metropolitan|urban|rural)\b', '', regex=True, flags=re.IGNORECASE)
 data['location'] = data['location'].str.strip()
+
+
 # Gives the number of null columns in each feature
 # print(data.isnull().sum())
 
@@ -81,8 +88,9 @@ def categorize_jobs_by_title(title):
          
    return 'Other'
 
+data['general_title'] = data['title'].apply(categorize_jobs_by_title)
+
 def breakdown_by_title():
-   data['general_title'] = data['title'].apply(categorize_jobs_by_title)
 
    agg = duckdb.sql("""
             select general_title as job_title, count(id) as counts
@@ -92,21 +100,24 @@ def breakdown_by_title():
             """).df()
    return agg 
 
-# data['location'] = data['location'].str.split(',')
-# def get_country(loc):
-#    all_countries = [x.lower() for x in list(countries_by_name.keys())]
-#    all_countries.append('united kingdom')
-#    all_countries.append('united states')
-#    if len(loc[-1].lower().lstrip()) == 2:
-#       country = 'USA'
-#    elif loc[-1].lower().lstrip() in all_countries:
-#       return loc[-1]
-#    else:
-#       return None
-#    return country
+def jobs_by_date():
+   agg = duckdb.sql("""
+                    select date_posted, count(id) as counts
+                    from data
+                    group by date_posted 
+                    order by counts desc
+                    """).df()
+   return agg
 
-# data['country'] = data['location'].apply(get_country)
-
+def jobs_by_date_title():
+   agg = duckdb.sql("""
+                    select general_title as title, date_posted, count(id) as counts
+                    from data
+                    group by general_title, date_posted
+                    order by title, date_posted
+                    """).df()
+   return agg
+print(jobs_by_date_title())
 def get_cities_countries(text):
    def identify_extra_countries(text):
       
@@ -153,11 +164,19 @@ def catch_missing_city_country(location, city, country):
       else:
          city_out = city[:]
       return pd.Series({'city': city_out, 'country': country_out})
+   elif location.split(',')[0].strip() in city_to_cc.keys():
+      if country == '':
+         country_out = pycountry.countries.get(alpha_2 = city_to_cc.get(location.split(',')[0].strip())).name
+      else:
+         country_out = country[:]
+      if city == '':
+         city_out = location.split(',')[0].strip()
+      else:
+         city_out = city[:]
+      return pd.Series({'city': city_out, 'country': country_out})
    else:
       return pd.Series({'city': city, 'country': country})
 
 data[['city', 'country']] = data.apply(lambda row: catch_missing_city_country(row.location, row.city, row.country), axis=1)
 
-print(data[data['city'] == ''])
 
-print('Bengaluru' in city_to_cc.keys())
