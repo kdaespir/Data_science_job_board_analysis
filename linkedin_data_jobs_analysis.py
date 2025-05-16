@@ -15,11 +15,17 @@ def detect_replace(text):
    else:
       return text
 
-data['title'] = data['title'].apply(detect_replace)
-data['description'] = data['description'].apply(detect_replace) 
+# translates the text in the title and description columns to english
+# data['title'] = data['title'].apply(detect_replace)
+# data['description'] = data['description'].apply(detect_replace) 
 
 
 def jobs_by_company(num_companies=4):
+   """
+   This function takes an integer and returns a table with a number of rows equal to that of the interger plus 1.
+   where each row is a company and the number of jobs they have posted. the remaining column is an aggregation that shows
+   the total number summed from the companies not displayed in the table.
+   """
    companies_breakdown = duckdb.sql("""
                select company, count(id) as counts
                from data
@@ -64,4 +70,9 @@ def categorize_jobs_by_title(title):
 
 data['general_title'] = data['title'].apply(categorize_jobs_by_title)
 
+duckdb.sql("""
+           select general_title as job_title, count(id) as counts
+           from data
+           group by general_title
+           """).df()
 print(data[data['general_title'] == 'Other'])
