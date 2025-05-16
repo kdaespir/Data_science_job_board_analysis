@@ -1,11 +1,23 @@
 import pandas as pd
 import duckdb
 import re
+from langdetect import detect
+from deep_translator import GoogleTranslator
 
 data = pd.read_csv('clean_jobs.csv')
 
 # Gives the number of null columns in each feature
 # print(data.isnull().sum())
+
+def detect_replace(text):
+   if detect(text) != 'en':
+      return GoogleTranslator(source="auto", target="en").translate(text)
+   else:
+      return text
+
+data['title'] = data['title'].apply(detect_replace)
+data['description'] = data['description'].apply(detect_replace) 
+
 
 def jobs_by_company(num_companies=4):
    companies_breakdown = duckdb.sql("""
