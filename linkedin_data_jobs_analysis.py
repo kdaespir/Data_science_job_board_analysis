@@ -143,10 +143,21 @@ def catch_missing_city_country(location, city, country):
          city_out = city[:].strip()
          country_out = pycountry.countries.get(alpha_2=city_to_cc.get(city.strip())).name
          return pd.Series({'city': city_out, 'country': country_out})
+   elif location.split('-')[0].strip() in city_to_cc.keys():
+      if country == '':
+         country_out = pycountry.countries.get(alpha_2=city_to_cc.get(location.split('-')[0].strip())).name
+      else:
+         country_out = country[:]
+      if city == '':
+         city_out = location.split('-')[0].strip()
+      else:
+         city_out = city[:]
+      return pd.Series({'city': city_out, 'country': country_out})
    else:
       return pd.Series({'city': city, 'country': country})
 
 data[['city', 'country']] = data.apply(lambda row: catch_missing_city_country(row.location, row.city, row.country), axis=1)
 
-print(data[data['country'] == ''][['location', 'city', 'country']])
-print(city_to_cc.get('San Francisco'))
+print(data[data['city'] == ''])
+
+print('Bengaluru' in city_to_cc.keys())
