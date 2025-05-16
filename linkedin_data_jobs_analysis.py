@@ -5,8 +5,12 @@ from langdetect import detect
 from deep_translator import GoogleTranslator
 from iso3166 import countries_by_name
 from geotext import GeoText
+import geonamescache
+import pycountry
+
 data = pd.read_csv('clean_jobs.csv')
 
+data['location'] = data['location'].str.replace(r'\b(?:area|greater|metropolitan)\b', '', regex=True, flags=re.IGNORECASE)
 # Gives the number of null columns in each feature
 # print(data.isnull().sum())
 
@@ -96,13 +100,36 @@ def breakdown_by_title():
 # data['country'] = data['location'].apply(get_country)
 
 def get_cities_countries(text):
+   def identify_extra_countries(text):
+      
+      text_lis = text.split(',')
+      if len(text_lis[-1].lstrip()) == 2:
+         return "United States"
+      elif text_lis[-1].lstrip().lower() in ['uae', 'united arab emirates']:
+         return "United Arab Emirates"
+      else:
+         return ""
 
    place = GeoText(text)
    city_list = place.cities
    country_list = place.countries
 
    city = city_list[0] if city_list else ''
-   country = country_list[0] if country_list else ''
+   country = country_list[0] if country_list else identify_extra_countries(text)
    return pd.Series({'city': city, 'country': country})
+
 data[['city', 'country']] = data['location'].apply(get_cities_countries)
-print(data)
+
+def get_country_from_city(city, country):
+   gc = geonamescache.GeonamesCache()
+   cities_dict = gc.get_cities() 
+   city_to_cc = {
+    info['name']: info['countrycode']
+    for info in cities_dict.values()
+   }
+   # if country == '':
+   #    code = 
+
+print(data[data['country'] == ''][['location', 'city', 'country']])
+
+
