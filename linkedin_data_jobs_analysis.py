@@ -178,7 +178,8 @@ def catch_missing_city_country(location, city, country):
       return pd.Series({'city': city, 'country': country})
 
 data[['city', 'country']] = data.apply(lambda row: catch_missing_city_country(row.location, row.city, row.country), axis=1)
-data['city'].replace('', 'Unknown', inplace=True)
+data['city'] = data['city'].replace('', 'Unknown')
+
 def breakdown_by_city(num_cities=5):
    agg = duckdb.sql(f"""
                     with cte as (
@@ -197,8 +198,28 @@ def breakdown_by_city(num_cities=5):
                     from data
                     where city not in (select city from cte)
                     order by counts desc
-                    """)
+                    """).df()
    return agg
 
-print(breakdown_by_city())
+def breakdown_by_country(num_cities=4):
+   agg = duckdb.sql(f"""
+                    with cte as (
+                    select country, count(id) as counts
+                    from data
+                    group by country
+                    order by counts desc
+                    limit {num_cities})
+
+                    select *
+                    from cte
+
+                    union
+
+                    select 'Other' as country, count(id) as counts
+                    from data
+                    where country not in (select country from cte)
+                    order by counts desc
+                    """).df()
+   return agg
+print(breakdown_by_country())
 
