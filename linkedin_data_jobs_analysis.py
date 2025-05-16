@@ -117,7 +117,7 @@ def jobs_by_date_title():
                     order by title, date_posted
                     """).df()
    return agg
-print(jobs_by_date_title())
+
 def get_cities_countries(text):
    def identify_extra_countries(text):
       
@@ -178,5 +178,27 @@ def catch_missing_city_country(location, city, country):
       return pd.Series({'city': city, 'country': country})
 
 data[['city', 'country']] = data.apply(lambda row: catch_missing_city_country(row.location, row.city, row.country), axis=1)
+data['city'].replace('', 'Unknown', inplace=True)
+def breakdown_by_city(num_cities=5):
+   agg = duckdb.sql(f"""
+                    with cte as (
+                    select city, count(id) as counts
+                    from data
+                    group by city
+                    order by counts desc
+                    limit {num_cities})
 
+                    select *
+                    from cte
+
+                    union
+
+                    select 'Other' as city, count(id) as counts
+                    from data
+                    where city not in (select city from cte)
+                    order by counts desc
+                    """)
+   return agg
+
+print(breakdown_by_city())
 
