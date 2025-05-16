@@ -3,6 +3,7 @@ import duckdb
 import re
 from langdetect import detect
 from deep_translator import GoogleTranslator
+from iso3166 import countries_by_name
 
 data = pd.read_csv('clean_jobs.csv')
 
@@ -68,11 +69,31 @@ def categorize_jobs_by_title(title):
          
    return 'Other'
 
-data['general_title'] = data['title'].apply(categorize_jobs_by_title)
+def breakdown_by_title():
+   data['general_title'] = data['title'].apply(categorize_jobs_by_title)
 
-duckdb.sql("""
-           select general_title as job_title, count(id) as counts
-           from data
-           group by general_title
-           """).df()
-print(data[data['general_title'] == 'Other'])
+   agg = duckdb.sql("""
+            select general_title as job_title, count(id) as counts
+            from data
+            group by general_title
+            order by counts desc
+            """).df()
+   return agg 
+
+data['location'] = data['location'].str.split(',')
+def get_country(loc):
+   all_countries = [x.lower() for x in list(countries_by_name.keys())]
+   all_countries.append('united kingdom')
+   all_countries.append('united states')
+   if len(loc[-1].lower().lstrip()) == 2:
+      country = 'USA'
+   elif loc[-1].lower().lstrip() in all_countries:
+      return loc[-1]
+   else:
+      return None
+   return country
+
+data['country'] = data['location'].apply(get_country)
+
+all_countries = [x.lower() for x in list(countries_by_name.keys())]
+print(data[data['country'].isnull()])
