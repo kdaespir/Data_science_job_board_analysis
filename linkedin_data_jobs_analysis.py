@@ -4,7 +4,7 @@ import re
 from langdetect import detect
 from deep_translator import GoogleTranslator
 from iso3166 import countries_by_name
-
+from geotext import GeoText
 data = pd.read_csv('clean_jobs.csv')
 
 # Gives the number of null columns in each feature
@@ -80,20 +80,29 @@ def breakdown_by_title():
             """).df()
    return agg 
 
-data['location'] = data['location'].str.split(',')
-def get_country(loc):
-   all_countries = [x.lower() for x in list(countries_by_name.keys())]
-   all_countries.append('united kingdom')
-   all_countries.append('united states')
-   if len(loc[-1].lower().lstrip()) == 2:
-      country = 'USA'
-   elif loc[-1].lower().lstrip() in all_countries:
-      return loc[-1]
-   else:
-      return None
-   return country
+# data['location'] = data['location'].str.split(',')
+# def get_country(loc):
+#    all_countries = [x.lower() for x in list(countries_by_name.keys())]
+#    all_countries.append('united kingdom')
+#    all_countries.append('united states')
+#    if len(loc[-1].lower().lstrip()) == 2:
+#       country = 'USA'
+#    elif loc[-1].lower().lstrip() in all_countries:
+#       return loc[-1]
+#    else:
+#       return None
+#    return country
 
-data['country'] = data['location'].apply(get_country)
+# data['country'] = data['location'].apply(get_country)
 
-all_countries = [x.lower() for x in list(countries_by_name.keys())]
-print(data[data['country'].isnull()])
+def get_cities_countries(text):
+
+   place = GeoText(text)
+   city_list = place.cities
+   country_list = place.countries
+
+   city = city_list[0] if city_list else ''
+   country = country_list[0] if country_list else ''
+   return pd.Series({'city': city, 'country': country})
+data[['city', 'country']] = data['location'].apply(get_cities_countries)
+print(data)
