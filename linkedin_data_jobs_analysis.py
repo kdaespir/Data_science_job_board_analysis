@@ -11,6 +11,7 @@ import pycountry
 data = pd.read_csv('clean_jobs.csv')
 
 data['location'] = data['location'].str.replace(r'\b(?:area|greater|metropolitan)\b', '', regex=True, flags=re.IGNORECASE)
+data['location'] = data['location'].str.strip()
 # Gives the number of null columns in each feature
 # print(data.isnull().sum())
 
@@ -120,16 +121,29 @@ def get_cities_countries(text):
 
 data[['city', 'country']] = data['location'].apply(get_cities_countries)
 
-def get_country_from_city(city, country):
+def catch_missing_city_country(location, city, country):
    gc = geonamescache.GeonamesCache()
    cities_dict = gc.get_cities() 
    city_to_cc = {
     info['name']: info['countrycode']
     for info in cities_dict.values()
    }
-   # if country == '':
-   #    code = 
+   if location.strip() in city_to_cc.keys():
+      if country == '':
+         country_out = city_to_cc.get(location.strip())
+      if city == '':
+         city_out = location
+      return pd.Series
 
-print(data[data['country'] == ''][['location', 'city', 'country']])
+
+# print(data[data['country'] == ''][['location', 'city', 'country']])
 
 
+gc = geonamescache.GeonamesCache()
+cities_dict = gc.get_cities() 
+city_to_cc = {
+   info['name']: info['countrycode']
+   for info in cities_dict.values()
+}
+
+print(city_to_cc.get('ttes') == None)
