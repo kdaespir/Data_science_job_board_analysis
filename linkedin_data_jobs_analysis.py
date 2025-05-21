@@ -3,7 +3,6 @@ import duckdb
 import re
 from langdetect import detect
 from deep_translator import GoogleTranslator
-from iso3166 import countries_by_name
 from geotext import GeoText
 import geonamescache
 import pycountry
@@ -225,8 +224,13 @@ def breakdown_by_country(num_cities=4):
 
 def get_pay_ranges():
    qa_model = pipeline("question-answering")
+   def get_qa_result(x):
+      result = qa_model(question="What is the pay range for this role?", context=x)
+      if result['score'] < 0.3:
+         return "No Pay Range Listed" 
+      else:
+         return result['answer']
+   data["pay_range"] = data['description'].apply(lambda x: get_qa_result(x))
 
-   data["pay_range"] = data['description'].map(lambda x: "No Pay Range Listed" \
-                                             if qa_model(question="What is the pay range for this role?", context=x)['score'] < 0.3\
-                                                else qa_model(question="What is the pay range for this role?", context=x)['answer'])
-
+get_pay_ranges()
+print(data['pay_range'])
