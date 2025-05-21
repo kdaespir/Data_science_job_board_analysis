@@ -7,6 +7,7 @@ from iso3166 import countries_by_name
 from geotext import GeoText
 import geonamescache
 import pycountry
+from transformers import pipeline
 
 gc = geonamescache.GeonamesCache()
 cities_dict = gc.get_cities() 
@@ -221,5 +222,10 @@ def breakdown_by_country(num_cities=4):
                     order by counts desc
                     """).df()
    return agg
-print(breakdown_by_country())
+
+qa_model = pipeline("question-answering")
+
+pay_range = [qa_model(question="What is the pay range for this role?", context=x)['answer']\
+              for x in data['description'] if qa_model(question="What is the pay range for this role?", context=x)['score'] > 0.45]
+print(pay_range)
 
