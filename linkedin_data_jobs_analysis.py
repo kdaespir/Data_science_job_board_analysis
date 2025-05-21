@@ -223,9 +223,10 @@ def breakdown_by_country(num_cities=4):
                     """).df()
    return agg
 
-qa_model = pipeline("question-answering")
+def get_pay_ranges():
+   qa_model = pipeline("question-answering")
 
-data["pay_range"] = data['description'].map(lambda x: "No Pay Range Listed" \
-                                            if qa_model(question="What is the pay range for this role?", context=x)['score'] < 0.3\
-                                             else qa_model(question="What is the pay range for this role?", context=x)['answer'])
+   data["pay_range"] = data['description'].map(lambda x: "No Pay Range Listed" \
+                                             if qa_model(question="What is the pay range for this role?", context=x)['score'] < 0.3\
+                                                else qa_model(question="What is the pay range for this role?", context=x)['answer'])
 
