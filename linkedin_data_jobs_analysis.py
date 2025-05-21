@@ -225,7 +225,7 @@ def breakdown_by_country(num_cities=4):
 
 qa_model = pipeline("question-answering")
 
-pay_range = [qa_model(question="What is the pay range for this role?", context=x)['answer']\
-              for x in data['description'] if qa_model(question="What is the pay range for this role?", context=x)['score'] > 0.45]
-print(pay_range)
+data["pay_range"] = data['description'].map(lambda x: "No Pay Range Listed" \
+                                            if qa_model(question="What is the pay range for this role?", context=x)['score'] < 0.3\
+                                             else qa_model(question="What is the pay range for this role?", context=x)['answer'])
 
