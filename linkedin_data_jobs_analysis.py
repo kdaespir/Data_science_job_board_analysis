@@ -6,7 +6,7 @@ from deep_translator import GoogleTranslator
 from geotext import GeoText
 import geonamescache
 import pycountry
-from transformers import pipeline
+import matplotlib.pyplot as plt
 
 gc = geonamescache.GeonamesCache()
 cities_dict = gc.get_cities() 
@@ -17,7 +17,8 @@ city_to_cc = {
 
 data = pd.read_csv('clean_jobs.csv')
 
-# print(data.isnull().sum(), len(data))
+# Gives the number of null columns in each feature
+print(data.isnull().sum(),data.shape)
 
 #employment type and worktype was all NaN in this dataset and can be dropped
 data.drop(['employment_type', 'work_type'], inplace=True, axis=1 )
@@ -25,9 +26,6 @@ data.drop(['employment_type', 'work_type'], inplace=True, axis=1 )
 data['location'] = data['location'].str.replace(r'\b(?:area|greater|metropolitan|urban|rural)\b', '', regex=True, flags=re.IGNORECASE)
 data['location'] = data['location'].str.strip()
 
-
-# Gives the number of null columns in each feature
-# print(data.isnull().sum())
 
 def detect_replace(text):
    if detect(text) != 'en':
@@ -70,8 +68,12 @@ def jobs_by_company(num_companies=4):
 
                   order by company
                   ''').df()
+
    return companies_w_most_jobs
-               
+g = jobs_by_company().sort_values(by=['counts'], ascending=True)
+g.plot(x='company', y='counts', kind='barh')
+plt.show()
+print('t')
 def categorize_jobs_by_title(title):
    buckets = {
       "Data Engineer":                 [r"\bdata engineer\b", r"\bengineer, data\b", r"\analytics engineer\b"],
@@ -223,14 +225,15 @@ def breakdown_by_country(num_cities=4):
    return agg
 
 def get_pay_ranges():
+   from transformers import pipeline
    qa_model = pipeline("question-answering")
    def get_qa_result(x):
       result = qa_model(question="What is the pay range for this role?", context=x)
-      if result['score'] < 0.3:
-         return "No Pay Range Listed" 
-      else:
+      if result['score'] > 0.45:
          return result['answer']
+      else:
+         return "No Pay Range Listed"
    data["pay_range"] = data['description'].apply(lambda x: get_qa_result(x))
 
-get_pay_ranges()
-print(data['pay_range'])
+# get_pay_ranges()
+# print(data['pay_range'])
