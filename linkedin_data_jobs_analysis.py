@@ -68,12 +68,11 @@ def jobs_by_company(num_companies=4):
 
                   order by company
                   ''').df()
-
+   _ = jobs_by_company().sort_values(by=['counts'], ascending=True)
+   _.plot(x='company', y='counts', kind='barh', title="Number of Job Posts By Company", xlabel="Number of Job Posts")
+   plt.show()
    return companies_w_most_jobs
-g = jobs_by_company().sort_values(by=['counts'], ascending=True)
-g.plot(x='company', y='counts', kind='barh')
-plt.show()
-print('t')
+
 def categorize_jobs_by_title(title):
    buckets = {
       "Data Engineer":                 [r"\bdata engineer\b", r"\bengineer, data\b", r"\analytics engineer\b"],
@@ -100,6 +99,8 @@ def breakdown_by_title():
             group by general_title
             order by counts desc
             """).df()
+   agg.plot(x='job_title', y='counts', kind='barh', title='Number of Job Posts by Job Title', xlabel="Number of Job Posts")
+   plt.show()
    return agg 
 
 def jobs_by_date():
@@ -109,6 +110,8 @@ def jobs_by_date():
                     group by date_posted 
                     order by counts desc
                     """).df()
+   agg.plot(x='date_posted', y='counts', kind='line', title='Number of Job Posts by date', xlabel="Date", ylabel='Number of job posts')
+   plt.show()
    return agg
 
 def jobs_by_date_title():
